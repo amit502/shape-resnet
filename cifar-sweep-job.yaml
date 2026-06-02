@@ -49,11 +49,11 @@ spec:
               echo "=========================================="
               apt-get update -qq && apt-get install -y -qq git
               git clone \
-                --branch shape-res-final \
+                --branch main \
                 --single-branch \
-                https://${GITHUB_PAT}@github.com/amit502/shapebiasnet.git \
-                /shapebiasnet
-              cd /shapebiasnet
+                https://${GITHUB_PAT}@github.com/amit502/shape-resnet.git \
+                /shape-resnet
+              cd /shape-resnet
 
               pip install -r requirements.txt --quiet
               nvidia-smi

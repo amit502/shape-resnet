@@ -1,0 +1,136 @@
+# profile-job.yaml
+# ─────────────────────────────────────────────────────────────
+# Profiling-only job: no training, no eval.
+# Measures params, GFLOPs, latency, throughput, and peak GPU memory
+# for all models that were actually trained and evaluated.
+#
+# CIFAR models  : baseline_res18, shape_res18, baseline_res50, shape_res50
+# ImageNet-100  : baseline_res50, shape_res50, baseline_res101, shape_res101
+#
+# Submit:  kubectl apply -f profile-job.yaml
+# Logs:    kubectl logs -f job/shape-resnet-profiler -n kc-ai-research-lab
+# Delete:  kubectl delete job shape-resnet-profiler -n kc-ai-research-lab
+# ─────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: shape-resnet-profiler
+  namespace: kc-ai-research-lab
+spec:
+  backoffLimit: 0
+
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: nvidia.com/gpu.product
+                    operator: In
+                    values:
+                      - NVIDIA-RTX-5000-Ada-Generation
+
+      containers:
+        - name: profiler
+          image: pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
+
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+
+              # ── Step 0: Clone repo ────────────────────────────
+              echo "=========================================="
+              echo "  Step 0: Cloning repo (branch: main)"
+              echo "=========================================="
+              apt-get update -qq && apt-get install -y -qq git
+              git clone \
+                --branch main \
+                --single-branch \
+                https://${GITHUB_PAT}@github.com/amit502/shape-resnet.git \
+                /shape-resnet
+              cd /shape-resnet
+
+              # ── Step 1: Dependencies ──────────────────────────
+              echo ""
+              echo "=========================================="
+              echo "  Step 1: Installing dependencies"
+              echo "=========================================="
+              pip install -r requirements.txt --quiet
+              pip install fvcore --quiet   # accurate FLOPs counting
+
+              mkdir -p /pvc/results/profile
+
+              # ── Step 2: Profile CIFAR models ──────────────────
+              echo ""
+              echo "=========================================="
+              echo "  Step 2: Profiling CIFAR models (32x32)"
+              echo "=========================================="
+              python profiler.py \
+                --dataset     cifar10 \
+                --models      baseline_res18,shape_res18,baseline_res50,shape_res50 \
+                --warmup      20 \
+                --runs        100 \
+                --results_dir /pvc/results/profile
+
+              # ── Step 3: Profile ImageNet-100 models ───────────
+              echo ""
+              echo "=========================================="
+              echo "  Step 3: Profiling ImageNet-100 models (224x224)"
+              echo "=========================================="
+              python profiler.py \
+                --dataset     imagenet100 \
+                --models      baseline_res50,shape_res50,baseline_res101,shape_res101 \
+                --warmup      20 \
+                --runs        100 \
+                --results_dir /pvc/results/profile
+
+              # ── Done ──────────────────────────────────────────
+              echo ""
+              echo "=========================================="
+              echo "  Profiling complete. Results:"
+              echo "=========================================="
+              ls -lh /pvc/results/profile/
+
+          resources:
+            requests:
+              cpu: "3"
+              memory: "10Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "3"
+              memory: "12Gi"
+              nvidia.com/gpu: "1"
+
+          env:
+            - name: GITHUB_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: github-pat
+                  key: token
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: "expandable_segments:True"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+
+          volumeMounts:
+            - name: data
+              mountPath: /pvc
+            - name: shm
+              mountPath: /dev/shm
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: shape-resnet-pvc
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 4Gi
+
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
