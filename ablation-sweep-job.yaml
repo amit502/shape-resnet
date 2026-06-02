@@ -1,0 +1,173 @@
+# ablation-sweep-job.yaml
+# ─────────────────────────────────────────────────────────────
+# Ablation sweep — ResNet-18 / CIFAR-10
+#
+# Models (7 ablation variants — baseline and shape_res18 not re-run):
+#   shape_res18_early_gate           — gate r1,r2 + late fusion
+#   shape_res18_late_gate            — gate r3 + late fusion
+#   shape_res18_gate_only            — gate r3, no fusion
+#   shape_res18_early_gate_nofuse    — gate r1,r2, no fusion
+#   shape_res18_early_fuse           — inject s2 at r2, no gate
+#   shape_res18_early_fuse_early_gate— gate r1,r2 + inject s2 at r2
+#   shape_res18_early_fuse_late_gate — inject s2 at r2 + gate r3
+#
+# Dataset: cifar10
+# Seeds  : 42 / 23 / 17
+# Total  : 7 models x 1 dataset x 3 seeds = 21 runs (~7 hours)
+#
+# Checkpoints : /pvc/checkpoints/ablation-sweep/seed-{SEED}/
+# Results     : /pvc/results/ablation-sweep/seed-{SEED}/
+#
+# Submit:  kubectl apply -f ablation-sweep-job.yaml
+# Logs:    kubectl logs -f job/shape-ablation-sweep -n kc-ai-research-lab
+# Delete:  kubectl delete job shape-ablation-sweep -n kc-ai-research-lab
+# ─────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: shape-ablation-sweep
+  namespace: kc-ai-research-lab
+spec:
+  backoffLimit: 0
+
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: nvidia.com/gpu.product
+                    operator: In
+                    values:
+                      - NVIDIA-RTX-5000-Ada-Generation
+
+      containers:
+        - name: pipeline
+          image: pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
+
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+
+              echo "=========================================="
+              echo "  Cloning repo (branch: shape-res-final)"
+              echo "=========================================="
+              apt-get update -qq && apt-get install -y -qq git
+              git clone \
+                --branch shape-res-final \
+                --single-branch \
+                https://${GITHUB_PAT}@github.com/amit502/shapebiasnet.git \
+                /shapebiasnet
+              cd /shapebiasnet
+
+              pip install -r requirements.txt --quiet
+              nvidia-smi
+
+              set +e
+
+              MODELS="shape_res18_early_gate shape_res18_late_gate shape_res18_gate_only shape_res18_early_gate_nofuse shape_res18_early_fuse shape_res18_early_fuse_early_gate shape_res18_early_fuse_late_gate"
+              SEEDS="42 23 17"
+              DATASET=cifar10
+              DATA_DIR="/pvc/${DATASET}"
+              PASS=0
+              FAIL=0
+
+              for SEED in $SEEDS; do
+                CKPT_DIR="/pvc/checkpoints/ablation-sweep/seed-${SEED}"
+                RESULTS_DIR="/pvc/results/ablation-sweep/seed-${SEED}"
+                mkdir -p "$CKPT_DIR" "$RESULTS_DIR"
+
+                for MODEL in $MODELS; do
+                  echo ""
+                  echo "============================================================"
+                  echo "  MODEL=$MODEL  DATASET=$DATASET  SEED=$SEED"
+                  echo "============================================================"
+
+                  rm -f "$CKPT_DIR/${MODEL}_${DATASET}.pt"
+
+                  python -u train.py \
+                    --model    $MODEL \
+                    --dataset  $DATASET \
+                    --data_dir $DATA_DIR \
+                    --ckpt_dir $CKPT_DIR \
+                    --epochs   40 \
+                    --batch    128 \
+                    --workers  4 \
+                    --seed     $SEED
+                  TRAIN_STATUS=$?
+
+                  if [ $TRAIN_STATUS -ne 0 ]; then
+                    echo "  [ERROR] Training failed — skipping eval."
+                    FAIL=$((FAIL + 1))
+                    continue
+                  fi
+
+                  python -u eval.py \
+                    --model       $MODEL \
+                    --dataset     $DATASET \
+                    --data_dir    $DATA_DIR \
+                    --ckpt_dir    $CKPT_DIR \
+                    --results_dir $RESULTS_DIR \
+                    --batch       128 \
+                    --workers     4
+                  EVAL_STATUS=$?
+
+                  if [ $EVAL_STATUS -ne 0 ]; then
+                    echo "  [WARN] Eval failed for $MODEL seed=$SEED"
+                    FAIL=$((FAIL + 1))
+                  else
+                    PASS=$((PASS + 1))
+                    echo "  [OK] $MODEL seed=$SEED done."
+                  fi
+                done
+              done
+
+              echo ""
+              echo "============================================================"
+              echo "  Sweep complete.  Passed: $PASS   Failed: $FAIL"
+              echo "============================================================"
+              ls /pvc/results/ablation-sweep/
+
+          resources:
+            requests:
+              cpu: "3"
+              memory: "9Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "3"
+              memory: "10Gi"
+              nvidia.com/gpu: "1"
+
+          env:
+            - name: GITHUB_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: github-pat
+                  key: token
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: "expandable_segments:True"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+
+          volumeMounts:
+            - name: data
+              mountPath: /pvc
+            - name: shm
+              mountPath: /dev/shm
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: shape-resnet-pvc
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 8Gi
+
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
