@@ -1,0 +1,29 @@
+\begin{table*}[htbp]
+\caption{CIFAR-10-C severity-averaged corruption accuracies (\%). Bold indicates best accuracy within each backbone group per corruption type.}
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Corruption} & \multicolumn{2}{c|}{ResNet-18} & \multicolumn{2}{c|}{ResNet-50} \\
+\cline{2-3} \cline{4-5}
+ & \textbf{\textit{Baseline}} & \textbf{\textit{Shape}} & \textbf{\textit{Baseline}} & \textbf{\textit{Shape}} \\
+\hline
+\textit{Gaussian noise} & 62.39$\pm$3.75 & \textbf{72.95$\pm$1.07} & 59.16$\pm$2.48 & \textbf{75.35$\pm$0.55} \\
+\textit{Shot noise} & 68.11$\pm$3.23 & \textbf{76.47$\pm$0.77} & 65.81$\pm$1.70 & \textbf{78.03$\pm$0.41} \\
+\textit{Impulse noise} & 61.94$\pm$2.31 & \textbf{69.02$\pm$0.74} & 62.72$\pm$0.64 & \textbf{70.76$\pm$0.66} \\
+\textit{Defocus blur} & 75.33$\pm$0.12 & \textbf{79.30$\pm$1.10} & 74.36$\pm$1.09 & \textbf{78.71$\pm$0.65} \\
+\textit{Glass blur} & 52.32$\pm$3.03 & \textbf{69.69$\pm$0.50} & 50.36$\pm$3.21 & \textbf{69.36$\pm$0.43} \\
+\textit{Motion blur} & 67.39$\pm$0.23 & \textbf{73.69$\pm$1.55} & 66.81$\pm$1.06 & \textbf{72.13$\pm$0.09} \\
+\textit{Zoom blur} & 70.09$\pm$0.52 & \textbf{76.31$\pm$1.36} & 69.14$\pm$1.62 & \textbf{75.85$\pm$0.66} \\
+\textit{Snow} & 72.71$\pm$1.55 & \textbf{77.18$\pm$0.31} & 70.91$\pm$0.34 & \textbf{75.14$\pm$0.08} \\
+\textit{Frost} & 71.28$\pm$1.83 & \textbf{76.95$\pm$0.45} & 69.61$\pm$0.57 & \textbf{73.17$\pm$0.29} \\
+\textit{Fog} & \textbf{75.60$\pm$0.62} & 71.96$\pm$0.51 & \textbf{75.45$\pm$1.72} & 66.93$\pm$1.00 \\
+\textit{Brightness} & \textbf{84.18$\pm$0.19} & 84.17$\pm$0.20 & \textbf{83.62$\pm$1.20} & 81.38$\pm$0.23 \\
+\textit{Contrast} & 64.12$\pm$0.81 & \textbf{71.20$\pm$0.92} & 63.00$\pm$2.20 & \textbf{66.69$\pm$1.55} \\
+\textit{Elastic} & 75.27$\pm$0.18 & \textbf{77.18$\pm$0.80} & 74.52$\pm$0.72 & \textbf{75.76$\pm$0.62} \\
+\textit{Pixelate} & 72.52$\pm$2.41 & \textbf{82.04$\pm$1.00} & 71.63$\pm$2.20 & \textbf{82.16$\pm$0.21} \\
+\textit{JPEG} & 79.11$\pm$0.96 & \textbf{81.42$\pm$0.27} & 78.03$\pm$0.30 & \textbf{80.96$\pm$0.21} \\
+\hline
+\end{tabular}
+\label{tab:cifar10_corruptions}
+\end{center}
+\end{table*}

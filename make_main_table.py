@@ -28,18 +28,16 @@ def make_table(df: pd.DataFrame) -> tuple:
     rows  = []
 
     lines += [
-        r"\begin{table*}[t]",
+        r"\begin{table*}[htbp]",
         r"\caption{Clean accuracy and corruption robustness comparison. "
         r"Bold indicates best performance within each backbone group. "
         r"Results show mean\,$\pm$\,std across seeds where multiple runs are available.}",
-        r"\label{tab:main}",
-        r"\vspace{6pt}",
-        r"\centering",
-        r"\begin{tabular}{lcccc}",
-        r"\toprule",
+        r"\begin{center}",
+        r"\begin{tabular}{|l|c|c|c|c|}",
+        r"\hline",
         r"\textbf{Model} & \textbf{Dataset} & \textbf{Clean Acc.} "
         r"& \textbf{mCA $\uparrow$} & \textbf{mCE $\downarrow$} \\",
-        r"\midrule",
+        r"\hline",
     ]
 
     groups = list(df.groupby(["dataset_display", "backbone_group"], sort=False))
@@ -66,11 +64,13 @@ def make_table(df: pd.DataFrame) -> tuple:
             })
 
         if i < len(groups) - 1:
-            lines.append(r"\midrule")
+            lines.append(r"\hline")
 
     lines += [
-        r"\bottomrule",
+        r"\hline",
         r"\end{tabular}",
+        r"\label{tab:main}",
+        r"\end{center}",
         r"\end{table*}",
     ]
 

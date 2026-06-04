@@ -62,15 +62,16 @@ SEVERITIES = [1, 2, 3, 4, 5]
 SEV_COLS   = ["s1", "s2", "s3", "s4", "s5"]
 
 plt.rcParams.update({
-    "font.family":      "serif",
-    "font.size":        9,
-    "axes.titlesize":   9,
-    "axes.labelsize":   9,
-    "legend.fontsize":  8,
-    "xtick.labelsize":  8,
-    "ytick.labelsize":  8,
-    "figure.dpi":       150,
-    "axes.spines.top":  False,
+    "font.family":       "serif",
+    "font.serif":        ["Times New Roman", "Times", "DejaVu Serif"],
+    "font.size":         8,
+    "axes.titlesize":    8,
+    "axes.labelsize":    8,
+    "legend.fontsize":   8,
+    "xtick.labelsize":   8,
+    "ytick.labelsize":   8,
+    "figure.dpi":        150,
+    "axes.spines.top":   False,
     "axes.spines.right": False,
 })
 

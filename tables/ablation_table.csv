@@ -1,0 +1,8 @@
+Variant,Group,Clean Acc.,mCA,mCE,Seeds
+"Early gate ($r_1, r_2$) + late fusion",gating,86.46±0.11,75.60±0.82,24.40±0.82,3
+Late gate ($r_3$) + late fusion,gating,86.45±0.18,76.56±0.28,23.44±0.28,3
+"Gate only, no fusion",gating,86.71±0.18,72.01±0.70,27.99±0.70,3
+"Early gate, no fusion",gating,87.38±0.08,72.37±0.87,27.63±0.87,3
+Early fusion ($s_2 \to r_2$),fusion,87.33±0.18,74.59±1.27,25.41±1.27,3
+Early fusion + early gate,fusion,87.46±0.20,75.71±0.33,24.29±0.33,3
+Early fusion + late gate,fusion,87.28±0.02,75.56±0.58,24.44±0.58,3

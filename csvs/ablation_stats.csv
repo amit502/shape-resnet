@@ -1,0 +1,8 @@
+model,group,n_seeds,clean_acc_mean,clean_acc_sd,mca_mean,mca_sd,mce_mean,mce_sd
+shape_res18_early_gate,gating,3,86.46,0.11,75.6,0.82,24.4,0.82
+shape_res18_late_gate,gating,3,86.45,0.18,76.56,0.28,23.44,0.28
+shape_res18_gate_only,gating,3,86.71,0.18,72.01,0.7,27.99,0.7
+shape_res18_early_gate_nofuse,gating,3,87.38,0.08,72.37,0.87,27.63,0.87
+shape_res18_early_fuse,fusion,3,87.33,0.18,74.59,1.27,25.41,1.27
+shape_res18_early_fuse_early_gate,fusion,3,87.46,0.2,75.71,0.33,24.29,0.33
+shape_res18_early_fuse_late_gate,fusion,3,87.28,0.02,75.56,0.58,24.44,0.58

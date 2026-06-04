@@ -1,0 +1,9 @@
+model_display,dataset_display,backbone_group,clean_acc_mean,clean_acc_sd,mCA_mean,mCA_sd,mCE_mean,mCE_sd
+ResNet-18,CIFAR-10,res18,86.31,0.32,70.16,1.2,29.84,1.2
+Shape-ResNet18,CIFAR-10,res18,86.44,0.1,75.97,0.23,24.03,0.23
+ResNet-50,CIFAR-10,res50,86.26,0.76,69.01,0.9,30.99,0.9
+Shape-ResNet50,CIFAR-10,res50,84.75,0.18,74.83,0.24,25.17,0.24
+ResNet-18,CIFAR-100,res18,62.37,0.12,45.62,0.19,54.38,0.19
+Shape-ResNet18,CIFAR-100,res18,62.46,0.19,47.94,0.17,52.06,0.17
+ResNet-50,CIFAR-100,res50,59.22,1.41,42.51,1.0,57.49,1.0
+Shape-ResNet50,CIFAR-100,res50,62.4,0.24,48.69,0.2,51.31,0.2

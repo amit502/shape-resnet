@@ -1,0 +1,23 @@
+\begin{table*}[htbp]
+\caption{Ablation study on {CIFAR}-10-{C} using a {ResNet}-18 backbone trained on clean data only. Bold indicates best performance within each variant group. Results show mean\,$\pm$\,std across three seeds.}
+\begin{center}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Variant} & \textbf{Clean Acc.} & \textbf{mCA $\uparrow$} & \textbf{mCE $\downarrow$} \\
+\hline
+ResNet-18 (baseline) & 86.31$\pm$0.32 & 70.16$\pm$1.20 & 29.84$\pm$1.20 \\
+Shape-ResNet-18 (full model) & \textbf{86.44$\pm$0.10} & \textbf{75.97$\pm$0.23} & \textbf{24.03$\pm$0.23} \\
+\hline
+Early gate ($r_1, r_2$) + late fusion & 86.46$\pm$0.11 & 75.60$\pm$0.82 & 24.40$\pm$0.82 \\
+Late gate ($r_3$) + late fusion & 86.45$\pm$0.18 & \textbf{76.56$\pm$0.28} & \textbf{23.44$\pm$0.28} \\
+Gate only, no fusion & 86.71$\pm$0.18 & 72.01$\pm$0.70 & 27.99$\pm$0.70 \\
+Early gate, no fusion & \textbf{87.38$\pm$0.08} & 72.37$\pm$0.87 & 27.63$\pm$0.87 \\
+\hline
+Early fusion ($s_2 \to r_2$) & 87.33$\pm$0.18 & 74.59$\pm$1.27 & 25.41$\pm$1.27 \\
+Early fusion + early gate & \textbf{87.46$\pm$0.20} & \textbf{75.71$\pm$0.33} & \textbf{24.29$\pm$0.33} \\
+Early fusion + late gate & 87.28$\pm$0.02 & 75.56$\pm$0.58 & 24.44$\pm$0.58 \\
+\hline
+\end{tabular}
+\label{tab:ablation}
+\end{center}
+\end{table*}

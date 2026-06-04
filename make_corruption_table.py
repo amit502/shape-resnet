@@ -87,18 +87,28 @@ def make_table(dataset: str, stats: pd.DataFrame) -> tuple:
     all_cols  = [col for grp in active_groups for col in grp]
     col_names = [c[1] for c in all_cols]
 
-    # booktabs-style: no vertical rules; \cmidrule separates backbone groups
-    col_fmt = "l" + "c" * len(all_cols)
+    col_fmt = "|l|" + "c|" * len(all_cols)
 
-    # build \cmidrule spans for the group separator line under the header
-    cmidrules = []
-    pos = 2  # first data column is position 2 (1-indexed; col 1 is "Corruption")
+    # IEEE-style two-row header: \multicolumn group names + \cline + sub-header row
+    clines             = []
+    group_header_cells = []
+    sub_header_cells   = []
+    pos = 2
     for grp in active_groups:
-        end = pos + len(grp) - 1
-        cmidrules.append(f"\\cmidrule(lr){{{pos}-{end}}}")
+        n   = len(grp)
+        end = pos + n - 1
+        group_header_cells.append(f"\\multicolumn{{{n}}}{{c|}}{{{grp[0][1]}}}")
+        for key, _, _ in grp:
+            if key.startswith("baseline_"):
+                sub_header_cells.append(r"\textbf{\textit{Baseline}}")
+            else:
+                sub_header_cells.append(r"\textbf{\textit{Shape}}")
+        clines.append(f"\\cline{{{pos}-{end}}}")
         pos = end + 1
 
-    header_cells = " & ".join(f"\\textbf{{{n}}}" for n in col_names)
+    group_header_row = " & ".join([r"\textbf{Corruption}"] + group_header_cells)
+    sub_header_row   = " & ".join([""] + sub_header_cells)
+
     dataset_disp = DATASET_DISPLAY.get(dataset, dataset)
     label        = f"tab:{dataset}_corruptions"
     caption      = (
@@ -107,15 +117,15 @@ def make_table(dataset: str, stats: pd.DataFrame) -> tuple:
     )
 
     lines = [
-        r"\begin{table*}[t]",
+        r"\begin{table*}[htbp]",
         f"\\caption{{{caption}}}",
-        f"\\label{{{label}}}",
-        r"\vspace{6pt}",
-        r"\centering",
+        r"\begin{center}",
         f"\\begin{{tabular}}{{{col_fmt}}}",
-        r"\toprule",
-        f"\\textbf{{Corruption}} & {header_cells} \\\\",
-        " ".join(cmidrules),
+        r"\hline",
+        f"{group_header_row} \\\\",
+        " ".join(clines),
+        f"{sub_header_row} \\\\",
+        r"\hline",
     ]
 
     csv_rows = []
@@ -153,7 +163,7 @@ def make_table(dataset: str, stats: pd.DataFrame) -> tuple:
         lines.append(f"\\textit{{{corr_disp}}} & {' & '.join(cells)} \\\\")
         csv_rows.append({"Corruption": corr_disp, **csv_cells})
 
-    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
+    lines += [r"\hline", r"\end{tabular}", f"\\label{{{label}}}", r"\end{center}", r"\end{table*}"]
     return "\n".join(lines), csv_rows
 
 

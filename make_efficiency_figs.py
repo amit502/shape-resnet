@@ -32,12 +32,12 @@ import pandas as pd
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 ap = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-ap.add_argument("--cifar_dir",     required=True,
+ap.add_argument("--cifar_dir",    required=True,
                 help="Folder containing profile_cifar10_*.csv")
-ap.add_argument("--imagenet_dir",  required=True,
-                help="Folder containing profile_imagenet100_*.csv")
-ap.add_argument("--out_dir",       default="figures")
-ap.add_argument("--table_dir",     default="tables")
+ap.add_argument("--imagenet_dir", default=None,
+                help="Folder containing profile_imagenet100_*.csv (optional)")
+ap.add_argument("--out_dir",      default="figures")
+ap.add_argument("--table_dir",    default="tables")
 args = ap.parse_args()
 
 Path(args.out_dir).mkdir(exist_ok=True)
@@ -58,13 +58,20 @@ def latest_csv(folder: str, pattern: str) -> pd.DataFrame:
 
 
 # ── Load data ─────────────────────────────────────────────────────────────────
-df_cifar    = latest_csv(args.cifar_dir,    "profile_cifar10_*.csv")
-df_imagenet = latest_csv(args.imagenet_dir, "profile_imagenet100_*.csv")
+df_cifar = latest_csv(args.cifar_dir, "profile_cifar10_*.csv")
+df_cifar["display_dataset"] = "CIFAR"
+frames      = [df_cifar]
+df_imagenet = None
 
-# Combine; add a display_dataset column
-df_cifar["display_dataset"]    = "CIFAR"
-df_imagenet["display_dataset"] = "ImageNet-100"
-df_all = pd.concat([df_cifar, df_imagenet], ignore_index=True)
+if args.imagenet_dir:
+    try:
+        df_imagenet = latest_csv(args.imagenet_dir, "profile_imagenet100_*.csv")
+        df_imagenet["display_dataset"] = "ImageNet-100"
+        frames.append(df_imagenet)
+    except FileNotFoundError:
+        print("  [INFO] No imagenet100 profile CSV found — skipping.")
+
+df_all = pd.concat(frames, ignore_index=True)
 
 
 # ── Display names ─────────────────────────────────────────────────────────────
@@ -89,14 +96,15 @@ METRICS = [
     ("params_total_M",   "Parameters (M)",    False),   # (col, label, higher_is_better)
     ("gflops",           "GFLOPs",            False),
     ("latency_mean_ms",  "Latency (ms)",      False),
-    ("throughput_img_s", "Throughput (img/s)", True),
+    ("throughput_img_s", "Throughput (images/s)", True),
     ("peak_mem_mb",      "Peak Memory (MB)",  False),
 ]
 
 plt.rcParams.update({
     "font.family":       "serif",
-    "font.size":         9,
-    "axes.titlesize":    9,
+    "font.serif":        ["Times New Roman", "Times", "DejaVu Serif"],
+    "font.size":         8,
+    "axes.titlesize":    8,
     "axes.labelsize":    8,
     "legend.fontsize":   8,
     "xtick.labelsize":   8,
@@ -178,8 +186,9 @@ def make_figure(df: pd.DataFrame, dataset_label: str, out_path: str):
     print(f"  Wrote {out_path}")
 
 
-make_figure(df_cifar,    "CIFAR",        f"{args.out_dir}/efficiency_cifar.pdf")
-make_figure(df_imagenet, "ImageNet-100", f"{args.out_dir}/efficiency_imagenet100.pdf")
+make_figure(df_cifar, "CIFAR", f"{args.out_dir}/efficiency_cifar.pdf")
+if df_imagenet is not None:
+    make_figure(df_imagenet, "ImageNet-100", f"{args.out_dir}/efficiency_imagenet100.pdf")
 
 
 # ── LaTeX + CSV table ─────────────────────────────────────────────────────────
@@ -191,96 +200,74 @@ def fmt(val: float, bold: bool = False) -> str:
 def make_latex_table(df: pd.DataFrame):
     """Returns (latex_str, csv_rows)."""
     lines = [
-        r"\begin{table*}[t]",
-        r"\caption{Efficiency comparison of baseline and shape-biased models. "
-        r"Parameters (M), GFLOPs, latency (ms), throughput (img/s), and peak GPU "
-        r"memory (MB) are reported. Bold indicates the more efficient model within "
-        r"each backbone pair.}",
-        r"\label{tab:efficiency}",
-        r"\vspace{6pt}",
-        r"\centering",
-        r"\begin{tabular}{llccccc}",
-        r"\toprule",
-        r"\textbf{Dataset} & \textbf{Model}"
+        r"\begin{table}[htbp]",
+        r"\caption{Efficiency comparison of baseline and shape-biased models "
+        r"on {CIFAR}-10 (32$\times$32 input, batch size 1). "
+        r"Bold indicates the more efficient value within each backbone pair.}",
+        r"\begin{center}",
+        r"\begin{tabular}{|l|c|c|c|c|c|}",
+        r"\hline",
+        r"\textbf{Model}"
         r"  & \rotatebox{90}{\textbf{Params (M)}\hspace{4pt}}"
         r"  & \rotatebox{90}{\textbf{GFLOPs}\hspace{4pt}}"
         r"  & \rotatebox{90}{\textbf{Latency (ms)}\hspace{4pt}}"
-        r"  & \rotatebox{90}{\textbf{Throughput (img/s)}\hspace{4pt}}"
-        r"  & \rotatebox{90}{\textbf{Peak Mem (MB)}\hspace{4pt}} \\",
-        r"\midrule",
+        r"  & \rotatebox{90}{\textbf{Throughput (images/s)}\hspace{4pt}}"
+        r"  & \rotatebox{90}{\textbf{Peak Memory (MB)}\hspace{4pt}} \\",
+        r"\hline",
     ]
     csv_rows = []
 
-    datasets = [
-        ("CIFAR",        df[df["display_dataset"] == "CIFAR"]),
-        ("ImageNet-100", df[df["display_dataset"] == "ImageNet-100"]),
+    ds_df = df[df["display_dataset"] == "CIFAR"]
+    pairs = [
+        (b, s, lbl) for b, s, lbl, _ in BACKBONE_PAIRS
+        if b in ds_df["model"].values and s in ds_df["model"].values
     ]
 
-    for ds_idx, (ds_label, ds_df) in enumerate(datasets):
-        if ds_df.empty:
-            continue
+    for pair_idx, (base_key, shape_key, _) in enumerate(pairs):
+        for model_key in (base_key, shape_key):
+            row = ds_df[ds_df["model"] == model_key]
+            if row.empty:
+                continue
+            r = row.iloc[0]
 
-        # pairs present in this dataset
-        pairs = [
-            (b, s, lbl) for b, s, lbl, _ in BACKBONE_PAIRS
-            if b in ds_df["model"].values and s in ds_df["model"].values
-        ]
+            partner_key = shape_key if model_key == base_key else base_key
+            partner_row = ds_df[ds_df["model"] == partner_key]
 
-        first_row_in_ds = True
-        for pair_idx, (base_key, shape_key, _) in enumerate(pairs):
-            for model_key in (base_key, shape_key):
-                row = ds_df[ds_df["model"] == model_key]
-                if row.empty:
-                    continue
-                r = row.iloc[0]
+            def is_bold_lower(col):
+                if partner_row.empty:
+                    return False
+                return float(r[col]) < float(partner_row.iloc[0][col])
 
-                # determine partner for bold comparison
-                partner_key = shape_key if model_key == base_key else base_key
-                partner_row = ds_df[ds_df["model"] == partner_key]
+            def is_bold_higher(col):
+                if partner_row.empty:
+                    return False
+                return float(r[col]) > float(partner_row.iloc[0][col])
 
-                def is_bold_lower(col):
-                    if partner_row.empty:
-                        return False
-                    return float(r[col]) < float(partner_row.iloc[0][col])
+            disp        = MODEL_DISPLAY.get(model_key, model_key)
+            params_cell = fmt(r["params_total_M"],   is_bold_lower("params_total_M"))
+            gflop_cell  = fmt(r["gflops"],           is_bold_lower("gflops"))
+            lat_cell    = fmt(r["latency_mean_ms"],  is_bold_lower("latency_mean_ms"))
+            tput_cell   = fmt(r["throughput_img_s"], is_bold_higher("throughput_img_s"))
+            mem_cell    = fmt(r["peak_mem_mb"],      is_bold_lower("peak_mem_mb"))
 
-                def is_bold_higher(col):
-                    if partner_row.empty:
-                        return False
-                    return float(r[col]) > float(partner_row.iloc[0][col])
+            lines.append(
+                f"{disp} & {params_cell} & {gflop_cell} "
+                f"& {lat_cell} & {tput_cell} & {mem_cell} \\\\"
+            )
+            csv_rows.append({
+                "Model":            disp,
+                "Params (M)":       f"{r['params_total_M']:.2f}",
+                "GFLOPs":           f"{r['gflops']:.2f}",
+                "Latency (ms)":     f"{r['latency_mean_ms']:.2f}",
+                "Throughput (images/s)": f"{r['throughput_img_s']:.1f}",
+                "Peak Memory (MB)": f"{r['peak_mem_mb']:.2f}",
+            })
 
-                disp = MODEL_DISPLAY.get(model_key, model_key)
-                ds_cell = ds_label if first_row_in_ds else ""
-                first_row_in_ds = False
+        if pair_idx < len(pairs) - 1:
+            lines.append(r"\hline")
 
-                params_cell = fmt(r["params_total_M"],  is_bold_lower("params_total_M"))
-                gflop_cell  = fmt(r["gflops"],          is_bold_lower("gflops"))
-                lat_cell    = fmt(r["latency_mean_ms"], is_bold_lower("latency_mean_ms"))
-                tput_cell   = fmt(r["throughput_img_s"],is_bold_higher("throughput_img_s"))
-                mem_cell    = fmt(r["peak_mem_mb"],     is_bold_lower("peak_mem_mb"))
-
-                lines.append(
-                    f"{ds_cell} & {disp} & {params_cell} & {gflop_cell} "
-                    f"& {lat_cell} & {tput_cell} & {mem_cell} \\\\"
-                )
-                csv_rows.append({
-                    "Dataset":          ds_label,
-                    "Model":            disp,
-                    "Params (M)":       f"{r['params_total_M']:.2f}",
-                    "GFLOPs":           f"{r['gflops']:.2f}",
-                    "Latency (ms)":     f"{r['latency_mean_ms']:.2f}",
-                    "Throughput":       f"{r['throughput_img_s']:.1f}",
-                    "Peak Mem (MB)":    f"{r['peak_mem_mb']:.2f}",
-                })
-
-            # midrule between backbone pairs within a dataset
-            if pair_idx < len(pairs) - 1:
-                lines.append(r"\cmidrule(lr){2-7}")
-
-        # midrule between datasets
-        if ds_idx < len(datasets) - 1:
-            lines.append(r"\midrule")
-
-    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
+    lines += [r"\hline", r"\end{tabular}", r"\label{tab:efficiency}",
+              r"\end{center}", r"\end{table}"]
     return "\n".join(lines), csv_rows
 
 
@@ -293,8 +280,8 @@ tex_path.write_text(tex)
 print(f"  Wrote {tex_path}")
 
 with open(csv_path, "w", newline="") as f:
-    fields = ["Dataset", "Model", "Params (M)", "GFLOPs",
-              "Latency (ms)", "Throughput", "Peak Mem (MB)"]
+    fields = ["Model", "Params (M)", "GFLOPs",
+              "Latency (ms)", "Throughput (images/s)", "Peak Memory (MB)"]
     w = csv.DictWriter(f, fieldnames=fields)
     w.writeheader()
     w.writerows(csv_rows)

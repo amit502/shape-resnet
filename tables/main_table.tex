@@ -1,0 +1,23 @@
+\begin{table*}[htbp]
+\caption{Clean accuracy and corruption robustness comparison. Bold indicates best performance within each backbone group. Results show mean\,$\pm$\,std across seeds where multiple runs are available.}
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Model} & \textbf{Dataset} & \textbf{Clean Acc.} & \textbf{mCA $\uparrow$} & \textbf{mCE $\downarrow$} \\
+\hline
+ResNet-18 & CIFAR-10 & 86.31$\pm$0.32 & 70.16$\pm$1.20 & 29.84$\pm$1.20 \\
+Shape-ResNet18 & CIFAR-10 & \textbf{86.44$\pm$0.10} & \textbf{75.97$\pm$0.23} & \textbf{24.03$\pm$0.23} \\
+\hline
+ResNet-50 & CIFAR-10 & \textbf{86.26$\pm$0.76} & 69.01$\pm$0.90 & 30.99$\pm$0.90 \\
+Shape-ResNet50 & CIFAR-10 & 84.75$\pm$0.18 & \textbf{74.83$\pm$0.24} & \textbf{25.17$\pm$0.24} \\
+\hline
+ResNet-18 & CIFAR-100 & 62.37$\pm$0.12 & 45.62$\pm$0.19 & 54.38$\pm$0.19 \\
+Shape-ResNet18 & CIFAR-100 & \textbf{62.46$\pm$0.19} & \textbf{47.94$\pm$0.17} & \textbf{52.06$\pm$0.17} \\
+\hline
+ResNet-50 & CIFAR-100 & 59.22$\pm$1.41 & 42.51$\pm$1.00 & 57.49$\pm$1.00 \\
+Shape-ResNet50 & CIFAR-100 & \textbf{62.40$\pm$0.24} & \textbf{48.69$\pm$0.20} & \textbf{51.31$\pm$0.20} \\
+\hline
+\end{tabular}
+\label{tab:main}
+\end{center}
+\end{table*}

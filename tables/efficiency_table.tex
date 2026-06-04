@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\caption{Efficiency comparison of baseline and shape-biased models on {CIFAR}-10 (32$\times$32 input, batch size 1). Bold indicates the more efficient value within each backbone pair.}
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Model} & \rotatebox{90}{\textbf{Params (M)}} & \rotatebox{90}{\textbf{GFLOPs}} & \rotatebox{90}{\textbf{Latency (ms)}} & \rotatebox{90}{\textbf{Throughput (images/s)}} & \rotatebox{90}{\textbf{Peak Memory (MB)}} \\
+\hline
+ResNet-18 & 11.17 & 0.56 & \textbf{1.16} & \textbf{859.10} & \textbf{60.25} \\
+Shape-ResNet-18 & \textbf{4.17} & \textbf{0.55} & 1.89 & 529.50 & 152.58 \\
+\hline
+ResNet-50 & 23.52 & 1.30 & \textbf{3.30} & \textbf{302.70} & 228.22 \\
+Shape-ResNet-50 & \textbf{10.17} & \textbf{1.18} & 3.31 & 302.10 & \textbf{177.23} \\
+\hline
+\end{tabular}
+\label{tab:efficiency}
+\end{center}
+\end{table}

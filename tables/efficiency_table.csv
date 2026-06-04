@@ -1,0 +1,5 @@
+Model,Params (M),GFLOPs,Latency (ms),Throughput (images/s),Peak Memory (MB)
+ResNet-18,11.17,0.56,1.16,859.10,60.25
+Shape-ResNet-18,4.17,0.55,1.89,529.50,152.58
+ResNet-50,23.52,1.30,3.30,302.70,228.22
+Shape-ResNet-50,10.17,1.18,3.31,302.10,177.23

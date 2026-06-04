@@ -1,20 +1,24 @@
-# profile-job.yaml
+# feature-vis-job.yaml
 # ─────────────────────────────────────────────────────────────
-# Profiling-only job: no training, no eval.
-# Measures params, GFLOPs, latency, throughput, and peak GPU memory
-# for all models that were actually trained and evaluated.
+# Generates feature map visualization figure for the paper.
 #
-# CIFAR models  : baseline_res18, shape_res18, baseline_res50, shape_res50
-# ImageNet-100  : baseline_res50, shape_res50, baseline_res101, shape_res101
+# 3 rows × 4 cols:
+#   Row 0: Shape-ResNet-18, clean car image
+#   Row 1: Shape-ResNet-18, corrupted (severity 4)
+#   Row 2: Baseline ResNet-18, corrupted (severity 4)
 #
-# Submit:  kubectl apply -f profile-job.yaml
-# Logs:    kubectl logs -f job/shape-resnet-profiler -n kc-ai-research-lab
-# Delete:  kubectl delete job shape-resnet-profiler -n kc-ai-research-lab
+#   Cols: input | stage1 | stage2 | stage3
+#
+# Output: /pvc/results/figures/feature_vis_<corruption>_sev4.pdf/.png
+#
+# Submit: kubectl apply -f feature-vis-job.yaml -n kc-ai-research-lab
+# Logs:   kubectl logs -f job/shape-feature-vis -n kc-ai-research-lab
+# Delete: kubectl delete job shape-feature-vis -n kc-ai-research-lab
 # ─────────────────────────────────────────────────────────────
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: shape-resnet-profiler
+  name: shape-feature-vis
   namespace: kc-ai-research-lab
 spec:
   backoffLimit: 0
@@ -33,7 +37,7 @@ spec:
                       - NVIDIA-RTX-5000-Ada-Generation
 
       containers:
-        - name: profiler
+        - name: vis
           image: pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
 
           command: ["/bin/bash", "-c"]
@@ -41,9 +45,8 @@ spec:
             - |
               set -e
 
-              # ── Step 0: Clone repo ────────────────────────────
               echo "=========================================="
-              echo "  Step 0: Cloning repo (branch: main)"
+              echo "  Cloning repo (branch: main)"
               echo "=========================================="
               apt-get update -qq && apt-get install -y -qq git
               git clone \
@@ -53,43 +56,36 @@ spec:
                 /shape-resnet
               cd /shape-resnet
 
-              # ── Step 1: Dependencies ──────────────────────────
-              echo ""
-              echo "=========================================="
-              echo "  Step 1: Installing dependencies"
-              echo "=========================================="
               pip install -r requirements.txt --quiet
-              pip install fvcore --quiet   # accurate FLOPs counting
+              pip install matplotlib --quiet
 
-              mkdir -p /pvc/results/profile
+              mkdir -p /pvc/results/figures
 
-              # ── Step 2: Profile CIFAR models ──────────────────
-              echo ""
               echo "=========================================="
-              echo "  Step 2: Profiling CIFAR models (32x32)"
+              echo "  Generating feature map visualization"
               echo "=========================================="
-              python profiler.py \
-                --dataset     cifar10 \
-                --models      baseline_res18,shape_res18,baseline_res50,shape_res50 \
-                --warmup      20 \
-                --runs        100 \
-                --results_dir /pvc/results/profile
+              python visualize_features.py \
+                --data_dir    /pvc/cifar10 \
+                --ckpt_shape  /pvc/checkpoints/cifar-sweep/seed-42/shape_res18_cifar10.pt \
+                --ckpt_base   /pvc/checkpoints/cifar-sweep/seed-42/baseline_res18_cifar10.pt \
+                --corruption  gaussian_noise \
+                --severity    4 \
+                --car_idx     0 \
+                --out_dir     /pvc/results/figures
 
-              # ── Done ──────────────────────────────────────────
-              echo ""
               echo "=========================================="
-              echo "  Profiling complete. Results:"
+              echo "  Done. Output files:"
               echo "=========================================="
-              ls -lh /pvc/results/profile/
+              ls -lh /pvc/results/figures/feature_vis_*
 
           resources:
             requests:
-              cpu: "3"
-              memory: "10Gi"
+              cpu: "2"
+              memory: "6Gi"
               nvidia.com/gpu: "1"
             limits:
-              cpu: "3"
-              memory: "12Gi"
+              cpu: "2"
+              memory: "8Gi"
               nvidia.com/gpu: "1"
 
           env:
@@ -98,8 +94,6 @@ spec:
                 secretKeyRef:
                   name: github-pat
                   key: token
-            - name: PYTORCH_CUDA_ALLOC_CONF
-              value: "expandable_segments:True"
             - name: PYTHONUNBUFFERED
               value: "1"
 
@@ -116,7 +110,7 @@ spec:
         - name: shm
           emptyDir:
             medium: Memory
-            sizeLimit: 4Gi
+            sizeLimit: 2Gi
 
       tolerations:
         - key: "nvidia.com/gpu"
