@@ -155,35 +155,37 @@ base_model  = load_model("baseline_res18", args.ckpt_base)
 
 # ── Extract feature maps ──────────────────────────────────────────────────────
 print("Extracting features ...")
-feat_shape_clean  = extract_features(shape_model, "shape_res18",    clean_tensor)
-feat_shape_corr   = extract_features(shape_model, "shape_res18",    corrupt_tensor)
-feat_base_corr    = extract_features(base_model,  "baseline_res18", corrupt_tensor)
+feat_shape_clean = extract_features(shape_model, "shape_res18",    clean_tensor)
+feat_shape_corr  = extract_features(shape_model, "shape_res18",    corrupt_tensor)
+feat_base_clean  = extract_features(base_model,  "baseline_res18", clean_tensor)
+feat_base_corr   = extract_features(base_model,  "baseline_res18", corrupt_tensor)
 
-# ── Figure ────────────────────────────────────────────────────────────────────
+# ── Figure (4 rows × 4 cols) ──────────────────────────────────────────────────
 plt.rcParams.update({
-    "font.family":  "serif",
-    "font.serif":   ["Times New Roman", "Times", "DejaVu Serif"],
-    "font.size":    8,
+    "font.family":    "serif",
+    "font.serif":     ["Times New Roman", "Times", "DejaVu Serif"],
+    "font.size":      8,
     "axes.titlesize": 7,
 })
 
 ROW_LABELS = [
     "Shape-ResNet-18\n(clean)",
     "Shape-ResNet-18\n(corrupted, sev. 4)",
+    "Baseline ResNet-18\n(clean)",
     "Baseline ResNet-18\n(corrupted, sev. 4)",
 ]
 COL_LABELS = ["Input", "Stage 1", "Stage 2", "Stage 3"]
 ROWS = [
     (clean_np,   feat_shape_clean),
     (corrupt_np, feat_shape_corr),
+    (clean_np,   feat_base_clean),
     (corrupt_np, feat_base_corr),
 ]
 
-fig, axes = plt.subplots(3, 4, figsize=(7.2, 5.4))
+fig, axes = plt.subplots(4, 4, figsize=(7.2, 7.2))
 fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
 for r, (raw_np, feats) in enumerate(ROWS):
-    # Col 0: input image
     ax = axes[r, 0]
     ax.imshow(raw_np)
     ax.set_xticks([]); ax.set_yticks([])
@@ -191,7 +193,6 @@ for r, (raw_np, feats) in enumerate(ROWS):
         ax.set_title(COL_LABELS[0], fontsize=8, pad=4)
     ax.set_ylabel(ROW_LABELS[r], fontsize=7, labelpad=4)
 
-    # Cols 1-3: feature maps
     for c, stage in enumerate(["stage1", "stage2", "stage3"], start=1):
         ax = axes[r, c]
         vis = feat_to_vis(feats[stage])
@@ -200,8 +201,12 @@ for r, (raw_np, feats) in enumerate(ROWS):
         if r == 0:
             ax.set_title(COL_LABELS[c], fontsize=8, pad=4)
 
-# Thin border between rows to aid readability
-for r in range(2):
+# Separator line between the two model groups (after row 1)
+for c in range(4):
+    axes[1, c].spines["bottom"].set_linewidth(1.2)
+    axes[1, c].spines["bottom"].set_color("#555555")
+# Thin borders between clean/corrupt within each group
+for r in [0, 2]:
     for c in range(4):
         axes[r, c].spines["bottom"].set_linewidth(0.5)
         axes[r, c].spines["bottom"].set_color("#aaaaaa")

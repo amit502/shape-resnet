@@ -1,15 +1,19 @@
 # feature-vis-job.yaml
 # ─────────────────────────────────────────────────────────────
-# Generates feature map visualization figure for the paper.
+# Step 1: Train baseline_res18 and shape_res18 on CIFAR-10 (40 epochs)
+# Step 2: Generate feature map visualization figures for the paper.
 #
-# 3 rows × 4 cols:
-#   Row 0: Shape-ResNet-18, clean car image
+# Figure 1 — Car (3 rows × 4 cols):
+#   Row 0: Shape-ResNet-18, clean
 #   Row 1: Shape-ResNet-18, corrupted (severity 4)
 #   Row 2: Baseline ResNet-18, corrupted (severity 4)
-#
 #   Cols: input | stage1 | stage2 | stage3
 #
-# Output: /pvc/results/figures/feature_vis_<corruption>_sev4.pdf/.png
+# Figure 2 — Horse (3 rows × 6 cols):
+#   Rows: input | Shape-ResNet-18 stage1 | Baseline layer1
+#   Cols: clean | severity 1-5
+#
+# Output: /pvc/results/figures/
 #
 # Submit: kubectl apply -f feature-vis-job.yaml -n kc-ai-research-lab
 # Logs:   kubectl logs -f job/shape-feature-vis -n kc-ai-research-lab
@@ -62,12 +66,12 @@ spec:
               mkdir -p /pvc/results/figures
 
               echo "=========================================="
-              echo "  Generating feature map visualization"
+              echo "  Generating feature map figures"
               echo "=========================================="
               python visualize_features.py \
                 --data_dir    /pvc/cifar10 \
-                --ckpt_shape  /pvc/checkpoints/cifar-sweep/seed-42/shape_res18_cifar10.pt \
-                --ckpt_base   /pvc/checkpoints/cifar-sweep/seed-42/baseline_res18_cifar10.pt \
+                --ckpt_shape  /pvc/checkpoints/feature-vis/shape_res18_cifar10.pt \
+                --ckpt_base   /pvc/checkpoints/feature-vis/baseline_res18_cifar10.pt \
                 --corruption  gaussian_noise \
                 --severity    4 \
                 --car_idx     0 \
@@ -76,16 +80,16 @@ spec:
               echo "=========================================="
               echo "  Done. Output files:"
               echo "=========================================="
-              ls -lh /pvc/results/figures/feature_vis_*
+              ls -lh /pvc/results/figures/
 
           resources:
             requests:
-              cpu: "2"
-              memory: "6Gi"
+              cpu: "3"
+              memory: "10Gi"
               nvidia.com/gpu: "1"
             limits:
-              cpu: "2"
-              memory: "8Gi"
+              cpu: "3"
+              memory: "12Gi"
               nvidia.com/gpu: "1"
 
           env:
