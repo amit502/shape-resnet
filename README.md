@@ -36,9 +36,25 @@ Place datasets under `./data/`:
 - `CIFAR-10` and `CIFAR-10-C`
 - `CIFAR-100` and `CIFAR-100-C`
 
-CIFAR-10/100 are downloaded automatically on first run. CIFAR-10-C and
-CIFAR-100-C must be downloaded manually from
-https://zenodo.org/record/2535967.
+CIFAR-10 and CIFAR-100 are downloaded automatically on first run.
+CIFAR-10-C and CIFAR-100-C must be downloaded manually:
+
+- CIFAR-10-C: https://zenodo.org/record/2535967
+- CIFAR-100-C: https://zenodo.org/record/3555552
+
+Extract them so the directory structure looks like:
+
+```
+data/
+├── CIFAR-10-C/
+│   ├── gaussian_noise.npy
+│   ├── labels.npy
+│   └── ...
+└── CIFAR-100-C/
+    ├── gaussian_noise.npy
+    ├── labels.npy
+    └── ...
+```
 
 ---
 
