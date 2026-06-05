@@ -102,8 +102,7 @@ python train.py --run_group cifar_all --dataset cifar100
 python train.py --run_group ablation_cifar10 --dataset cifar10
 ```
 
-Available groups: `cifar_all`, `ablation_cifar10`, `imagenet_core`,
-`imagenet_all`, `imagenet100_core`, `imagenet100_all`.
+Available groups: `cifar_all`, `ablation_cifar10`.
 
 ### All models at once
 
