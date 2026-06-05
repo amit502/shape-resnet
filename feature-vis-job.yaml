@@ -15,15 +15,15 @@
 #
 # Output: /pvc/results/figures/
 #
-# Submit: kubectl apply -f feature-vis-job.yaml -n kc-ai-research-lab
-# Logs:   kubectl logs -f job/shape-feature-vis -n kc-ai-research-lab
-# Delete: kubectl delete job shape-feature-vis -n kc-ai-research-lab
+# Submit: kubectl apply -f feature-vis-job.yaml -n <YOUR_NAMESPACE>
+# Logs:   kubectl logs -f job/shape-feature-vis -n <YOUR_NAMESPACE>
+# Delete: kubectl delete job shape-feature-vis -n <YOUR_NAMESPACE>
 # ─────────────────────────────────────────────────────────────
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: shape-feature-vis
-  namespace: kc-ai-research-lab
+  namespace: <YOUR_NAMESPACE>
 spec:
   backoffLimit: 0
 
@@ -56,7 +56,7 @@ spec:
               git clone \
                 --branch main \
                 --single-branch \
-                https://${GITHUB_PAT}@github.com/amit502/shape-resnet.git \
+                https://${GITHUB_PAT}@github.com/<YOUR_USERNAME>/shape-resnet.git \
                 /shape-resnet
               cd /shape-resnet
 
@@ -96,7 +96,7 @@ spec:
             - name: GITHUB_PAT
               valueFrom:
                 secretKeyRef:
-                  name: github-pat
+                  name: <YOUR_PAT_SECRET>
                   key: token
             - name: PYTHONUNBUFFERED
               value: "1"
@@ -110,7 +110,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: shape-resnet-pvc
+            claimName: <YOUR_PVC_NAME>
         - name: shm
           emptyDir:
             medium: Memory

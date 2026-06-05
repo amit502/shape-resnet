@@ -21,14 +21,14 @@
 #   Buffer                     :  ~15 GB
 #   Total                      : ~250 GB  →  300Gi
 #
-# Apply:  kubectl apply -f k8s/data-pvc.yaml -n kc-ai-research-lab
-# Check:  kubectl get pvc shape-resnet-pvc -n kc-ai-research-lab
+# Apply:  kubectl apply -f k8s/data-pvc.yaml -n <YOUR_NAMESPACE>
+# Check:  kubectl get pvc shape-resnet-pvc -n <YOUR_NAMESPACE>
 # ─────────────────────────────────────────────────────────────
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: shape-resnet-pvc
-  namespace: kc-ai-research-lab
+  name: <YOUR_PVC_NAME>
+  namespace: <YOUR_NAMESPACE>
 spec:
   accessModes:
     - ReadWriteMany # cephfs supports multi-pod mount

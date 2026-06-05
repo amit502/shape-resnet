@@ -4,14 +4,14 @@
 #
 # Usage:
 #   kubectl apply -f k8s/shell-pod.yaml
-#   kubectl exec -it shell-pod -n kc-ai-research-lab -- bash
-#   kubectl delete pod shell-pod -n kc-ai-research-lab  (when done)
+#   kubectl exec -it shell-pod -n <YOUR_NAMESPACE> -- bash
+#   kubectl delete pod shell-pod -n <YOUR_NAMESPACE>  (when done)
 
 apiVersion: v1
 kind: Pod
 metadata:
   name: shell-pod
-  namespace: kc-ai-research-lab
+  namespace: <YOUR_NAMESPACE>
 spec:
   restartPolicy: Never
   containers:
@@ -31,4 +31,4 @@ spec:
   volumes:
     - name: data
       persistentVolumeClaim:
-        claimName: shape-resnet-pvc
+        claimName: <YOUR_PVC_NAME>

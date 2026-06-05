@@ -8,14 +8,14 @@
 # ImageNet-100  : baseline_res50, shape_res50, baseline_res101, shape_res101
 #
 # Submit:  kubectl apply -f profile-job.yaml
-# Logs:    kubectl logs -f job/shape-resnet-profiler -n kc-ai-research-lab
-# Delete:  kubectl delete job shape-resnet-profiler -n kc-ai-research-lab
+# Logs:    kubectl logs -f job/shape-resnet-profiler -n <YOUR_NAMESPACE>
+# Delete:  kubectl delete job shape-resnet-profiler -n <YOUR_NAMESPACE>
 # ─────────────────────────────────────────────────────────────
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: shape-resnet-profiler
-  namespace: kc-ai-research-lab
+  namespace: <YOUR_NAMESPACE>
 spec:
   backoffLimit: 0
 
@@ -49,7 +49,7 @@ spec:
               git clone \
                 --branch main \
                 --single-branch \
-                https://${GITHUB_PAT}@github.com/amit502/shape-resnet.git \
+                https://${GITHUB_PAT}@github.com/<YOUR_USERNAME>/shape-resnet.git \
                 /shape-resnet
               cd /shape-resnet
 
@@ -96,7 +96,7 @@ spec:
             - name: GITHUB_PAT
               valueFrom:
                 secretKeyRef:
-                  name: github-pat
+                  name: <YOUR_PAT_SECRET>
                   key: token
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: "expandable_segments:True"
@@ -112,7 +112,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: shape-resnet-pvc
+            claimName: <YOUR_PVC_NAME>
         - name: shm
           emptyDir:
             medium: Memory
